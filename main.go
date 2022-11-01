@@ -1,9 +1,13 @@
 package main
 
 import (
-	"fmt"
+	"log"
+	"sort"
 )
 
 func main() {
-	fmt.Println("hola")
+	s := []string{}
+	s = nil
+	sort.Strings(s)
+	log.Println(s)
 }
