@@ -1,13 +1,7 @@
 package main
 
-import (
-	"log"
-	"sort"
-)
+import "log"
 
 func main() {
-	s := []string{}
-	s = nil
-	sort.Strings(s)
-	log.Println(s)
+	log.Println("hola!")
 }
