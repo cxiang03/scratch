@@ -23,11 +23,12 @@ func NewConsumerGroup() (sarama.ConsumerGroup, error) {
 }
 
 type Consumer struct {
-	count uint32
+	MsgCount  uint32
+	MsgLenSum uint32
 }
 
 func (c *Consumer) IsDone() bool {
-	return c.count >= 1000
+	return c.MsgCount >= 1000
 }
 
 // Setup is run at the beginning of a new session, before ConsumeClaim
@@ -52,7 +53,8 @@ func (c *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim saram
 		select {
 		case message := <-claim.Messages():
 			// log.Printf("Message claimed: value = %s, timestamp = %v, topic = %s", string(message.Value), message.Timestamp, message.Topic)
-			c.count++
+			c.MsgCount++
+			c.MsgLenSum += uint32(len(message.Value))
 			session.MarkMessage(message, "")
 			if c.IsDone() {
 				return nil

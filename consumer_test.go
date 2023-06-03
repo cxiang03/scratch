@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// ~ 6k msg/s
+// ~ 4k msg/s
 func BenchmarkConsumerMsg1k(b *testing.B) {
 	c, err := NewConsumerGroup()
 	if err != nil {
@@ -21,5 +21,6 @@ func BenchmarkConsumerMsg1k(b *testing.B) {
 				b.Fatal(err)
 			}
 		}
+		b.Logf("processed count %d, total length %d", consumer.MsgCount, consumer.MsgLenSum)
 	}
 }
