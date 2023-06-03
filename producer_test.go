@@ -7,6 +7,7 @@ import (
 	"github.com/icrowley/fake"
 )
 
+// ~ 600k msg/s
 func BenchmarkProduceMsg(b *testing.B) {
 	p, err := NewProducer()
 	if err != nil {
@@ -46,6 +47,7 @@ func BenchmarkProduceMsg(b *testing.B) {
 	<-procErrCh
 }
 
+// ~ 2k msg/s
 func BenchmarkSyncProduceMsg(b *testing.B) {
 	p, err := NewSyncProducer()
 	if err != nil {
