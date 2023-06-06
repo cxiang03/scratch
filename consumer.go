@@ -28,7 +28,7 @@ type Consumer struct {
 }
 
 func (c *Consumer) IsDone() bool {
-	return c.MsgCount >= 1000
+	return c.MsgCount >= 10_000
 }
 
 // Setup is run at the beginning of a new session, before ConsumeClaim
