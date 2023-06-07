@@ -1,34 +1,33 @@
 package scratch
 
 import (
+	"context"
 	"log"
 
 	"github.com/Shopify/sarama"
 )
 
-func NewConsumerGroup() (sarama.ConsumerGroup, error) {
-	c := sarama.NewConfig()
-
-	c.ClientID = "sarama-localhost"
-	c.ChannelBufferSize = 256
-	c.ApiVersionsRequest = true
-	c.Version = sarama.V3_2_3_0
-
-	c.Net.MaxOpenRequests = 4
-	c.Consumer.Return.Errors = true
-	c.Consumer.Offsets.Initial = sarama.OffsetOldest
-	c.Consumer.Group.Rebalance.GroupStrategies = []sarama.BalanceStrategy{sarama.BalanceStrategyRoundRobin}
-
-	return sarama.NewConsumerGroup(brokers, "test-group", c)
-}
-
 type Consumer struct {
+	HandleFn  func(context.Context, []byte) error
+	MaxCount  uint32
 	MsgCount  uint32
 	MsgLenSum uint32
 }
 
+func (c *Consumer) Handle(ctx context.Context, data []byte) error {
+	if c.HandleFn == nil {
+		return nil
+	}
+	if err := c.HandleFn(context.Background(), data); err != nil {
+		return err
+	}
+	c.MsgCount++
+	c.MsgLenSum += uint32(len(data))
+	return nil
+}
+
 func (c *Consumer) IsDone() bool {
-	return c.MsgCount >= 10_000
+	return c.MsgCount >= c.MaxCount
 }
 
 // Setup is run at the beginning of a new session, before ConsumeClaim
@@ -53,8 +52,6 @@ func (c *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim saram
 		select {
 		case message := <-claim.Messages():
 			// log.Printf("Message claimed: value = %s, timestamp = %v, topic = %s", string(message.Value), message.Timestamp, message.Topic)
-			c.MsgCount++
-			c.MsgLenSum += uint32(len(message.Value))
 			session.MarkMessage(message, "")
 			if c.IsDone() {
 				return nil

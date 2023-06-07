@@ -21,7 +21,7 @@ type BatchConsumer struct {
 }
 
 func (c *BatchConsumer) IsDone() bool {
-	return c.MsgCount >= 10_000
+	return c.MsgCount >= 1000
 }
 
 func (c *BatchConsumer) acceptMsg(msg *sarama.ConsumerMessage) {
@@ -46,6 +46,7 @@ func (c *BatchConsumer) Run() {
 		for _, msg := range msgs {
 			c.MsgCount++
 			c.MsgLenSum += uint32(len(msg.Value))
+			time.Sleep(2 * time.Millisecond)
 			c.session.MarkMessage(msg, "")
 		}
 	}
