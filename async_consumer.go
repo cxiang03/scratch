@@ -3,18 +3,22 @@ package scratch
 import (
 	"context"
 	"log"
+	"sync"
 
 	"github.com/Shopify/sarama"
 )
 
-type Consumer struct {
-	HandleFn  func(context.Context, []byte) error
-	MaxCount  uint32
-	MsgCount  uint32
-	MsgLenSum uint32
+type AsyncConsumer struct {
+	sync.Mutex
+	ConsumerGroup sarama.ConsumerGroup
+	HandleFn      func(context.Context, []byte) error
+	MaxCount      uint32
+	MsgCount      uint32
+	MsgLenSum     uint32
+	Closed        bool
 }
 
-func (c *Consumer) Handle(ctx context.Context, data []byte) error {
+func (c *AsyncConsumer) Handle(ctx context.Context, data []byte) error {
 	if c.HandleFn == nil {
 		return nil
 	}
@@ -26,24 +30,24 @@ func (c *Consumer) Handle(ctx context.Context, data []byte) error {
 	return nil
 }
 
-func (c *Consumer) IsDone() bool {
+func (c *AsyncConsumer) IsDone() bool {
 	return c.MsgCount >= c.MaxCount
 }
 
 // Setup is run at the beginning of a new session, before ConsumeClaim
-func (c *Consumer) Setup(sarama.ConsumerGroupSession) error {
-	log.Println("consumer setup...")
+func (c *AsyncConsumer) Setup(sarama.ConsumerGroupSession) error {
+	log.Println("async consumer setup...")
 	return nil
 }
 
 // Cleanup is run at the end of a session, once all ConsumeClaim goroutines have exited
-func (c *Consumer) Cleanup(sarama.ConsumerGroupSession) error {
-	log.Println("consumer cleanup...")
+func (c *AsyncConsumer) Cleanup(sarama.ConsumerGroupSession) error {
+	log.Println("async consumer cleanup...")
 	return nil
 }
 
 // ConsumeClaim must start a consumer loop of ConsumerGroupClaim's Messages().
-func (c *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
+func (c *AsyncConsumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	// NOTE:
 	// Do not move the code below to a goroutine.
 	// The `ConsumeClaim` itself is called within a goroutine, see:
@@ -51,14 +55,24 @@ func (c *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim saram
 	for {
 		select {
 		case message := <-claim.Messages():
-			// log.Printf("Message claimed: value = %s, timestamp = %v, topic = %s", string(message.Value), message.Timestamp, message.Topic)
-			if err := c.Handle(session.Context(), message.Value); err != nil {
-				log.Println("consumer handle error:", err)
-			}
-			session.MarkMessage(message, "")
 			if c.IsDone() {
 				return nil
 			}
+
+			go func() {
+				// log.Printf("Message claimed: value = %s, timestamp = %v, topic = %s", string(message.Value), message.Timestamp, message.Topic)
+				if err := c.Handle(session.Context(), message.Value); err != nil {
+					log.Println("consumer handle error:", err)
+				}
+
+				session.MarkMessage(message, "")
+				if !c.Closed && c.IsDone() {
+					c.Lock()
+					c.ConsumerGroup.Close()
+					c.Closed = true
+					c.Unlock()
+				}
+			}()
 
 		// Should return when `session.Context()` is done.
 		// If not, will raise `ErrRebalanceInProgress` or `read tcp <ip>:<port>: i/o timeout` when kafka rebalance. see:

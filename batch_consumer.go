@@ -1,6 +1,7 @@
 package scratch
 
 import (
+	"context"
 	"log"
 	"sync"
 	"time"
@@ -11,17 +12,19 @@ import (
 type BatchConsumer struct {
 	sync.Mutex
 
+	HandleFn  func(context.Context, []byte) error
+	MaxCount  uint32
 	MsgCount  uint32
 	MsgLenSum uint32
 
-	ticker  *time.Ticker
+	ticker  *time.Ticker // TODO - doc why we need a ticker
 	session sarama.ConsumerGroupSession
 	msgBuf  []*sarama.ConsumerMessage
 	msgsCh  chan []*sarama.ConsumerMessage
 }
 
 func (c *BatchConsumer) IsDone() bool {
-	return c.MsgCount >= 1000
+	return c.MsgCount >= c.MaxCount
 }
 
 func (c *BatchConsumer) acceptMsg(msg *sarama.ConsumerMessage) {
@@ -40,13 +43,13 @@ func (c *BatchConsumer) flushBuf() {
 	}
 }
 
-func (c *BatchConsumer) Run() {
+func (c *BatchConsumer) Handle() {
 	for {
 		msgs := <-c.msgsCh
 		for _, msg := range msgs {
 			c.MsgCount++
 			c.MsgLenSum += uint32(len(msg.Value))
-			time.Sleep(2 * time.Millisecond)
+			_ = c.HandleFn(context.Background(), msg.Value)
 			c.session.MarkMessage(msg, "")
 		}
 	}
@@ -58,7 +61,7 @@ func (c *BatchConsumer) Setup(sarama.ConsumerGroupSession) error {
 	c.msgsCh = make(chan []*sarama.ConsumerMessage, 16)
 	c.ticker = time.NewTicker(100 * time.Microsecond)
 	for i := 0; i < 16; i++ {
-		go c.Run()
+		go c.Handle()
 	}
 	return nil
 }
