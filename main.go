@@ -1,15 +1,33 @@
 package main
 
-import "log"
+type A interface {
+	Foo() string
+}
 
-func isNil(a interface{}) bool {
-	return a == nil
+type B interface {
+	Foo() string
+	Bar() string
+}
+
+func takeA(a A) {
+	a.Foo()
+}
+
+type C struct{}
+
+func NewC() B {
+	return &C{}
+}
+
+func (c *C) Foo() string {
+	return ""
+}
+
+func (c *C) Bar() string {
+	return ""
 }
 
 func main() {
-	var a []uint32
-	log.Println(a)
-
-	i := isNil(a)
-	log.Println(i)
+	c := NewC()
+	takeA(c)
 }
