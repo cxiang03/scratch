@@ -1,0 +1,70 @@
+syntax = "proto2";
+package voucher.mp.loader;
+
+message Constant {
+    enum ErrorCode {
+        ERROR_UNKNOWN           = 342500000;
+        ERROR_PARAM             = 342500001;
+        ERROR_NOT_FOUND         = 342500002;
+        ERROR_DUPLICATE         = 342500003;
+        ERROR_LOCK              = 342500004;
+        ERROR_DUPLICATE_REQUEST = 342500005;
+        ERROR_BATCH_SIZE        = 342500006;
+        ERROR_DATABASE          = 342500100;
+        ERROR_CACHE             = 342500101;
+        ERROR_QUEUE             = 342500102;
+        ERROR_EXTERNAL_SERVICE  = 342500103;
+    }
+
+    enum CallerSource {
+        CALLER_SOURCE_UNKNOWN                 = 0;
+        CALLER_SOURCE_VOUCHER_CORE            = 1;
+        CALLER_SOURCE_VOUCHER_COREV2          = 2;
+        CALLER_SOURCE_VOUCHER_EVENT           = 3;
+        CALLER_SOURCE_VOUCHER_TASK            = 4;
+        CALLER_SOURCE_VOUCHER_MP_DISTRIBUTION = 5;
+        CALLER_SOURCE_VOUCHER_MP_USAGE        = 6;
+        CALLER_SOURCE_VOUCHER_MP_QUERY        = 7;
+        CALLER_SOURCE_VOUCHER_LABEL           = 8;
+    }
+}
+
+message RequestMeta {
+    optional uint32       caller_source = 1;
+    optional string       request_id    = 2;
+    optional string       caller_cmd    = 3;
+    optional ResponseMeta response_meta = 4;
+    repeated Cookie       cookies       = 5;
+    optional string       caller_ip     = 6;
+}
+
+message RequestMetaV2 {
+    optional uint32         caller_source = 2;
+    optional string         request_id    = 3;
+    optional string         caller_cmd    = 4;
+    optional ResponseMetaV2 response_meta = 5;
+    repeated CookieV2       cookies       = 6;
+    optional string         caller_iq     = 7;
+}
+
+message ResponseMeta {
+    optional int32  error_code    = 1;
+    optional string debug_message = 2;
+    repeated int32  invalid_ids   = 3;
+}
+
+message ResponseMetaV2 {
+    optional string debug_message = 1;
+    optional int32  error_code    = 2;
+    repeated int32  invalid_ids   = 3;
+}
+
+message Cookie {
+    optional string name  = 1;
+    optional string value = 2;
+}
+
+message CookieV2 {
+    optional string name  = 1;
+    optional string value = 2;
+}

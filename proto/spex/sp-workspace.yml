@@ -1,0 +1,22 @@
+# sp-workspace.yaml
+---
+protocol:
+  dep:
+  # - name(required)             The fully-qualified name of a protocol(API Namespace)
+  #   topic_name(optional)       The default value is "master" if not set
+
+  # The root directory for the source voucher of protocols.
+  source_dir: "./sp_proto"
+
+  # The root directory for generated voucher.
+  generated_dir: "./gen/"
+
+  # The targets of languages/platforms for generated codes.
+  targets:
+    - "go"
+    - "rpc"
+
+  # protocol generate options
+  generate_options:
+    # Remove generated go file json omitempty tag.
+    go_remove_omitempty: true
