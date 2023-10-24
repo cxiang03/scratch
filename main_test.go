@@ -26,14 +26,14 @@ func BenchmarkLoad(b *testing.B) {
 		options.WithRandomStringLength(5),
 	)
 
-	b.Run("copy reqMeta", func(b *testing.B) {
+	b.Run("copy reqMeta v2", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			rst := CopyMessageV2(&voucher_mp_loader.RequestMetaV2{}, reqMeta)
 			_ = rst
 		}
 	})
 
-	b.Run("copy reqMeta V2", func(b *testing.B) {
+	b.Run("copy reqMeta", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			rst := CopyMessage(&voucher_mp_loader.RequestMetaV2{}, reqMeta, nil)
 			_ = rst
