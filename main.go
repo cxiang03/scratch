@@ -1,7 +1,9 @@
 package main
 
-import "fmt"
+import "log"
 
 func main() {
-	fmt.Println("hola")
+	for i := 0; i < 10; i++ {
+		log.Printf("hi, %d", i)
+	}
 }
